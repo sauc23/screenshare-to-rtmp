@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Screen Share with Audio</title>
+</head>
+<body>
+    <h1>Screen Share with Audio</h1>
+    <button id="start">Start Screen Share</button>
+    <button id="stop" disabled>Stop Screen Share</button>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        let mediaRecorder;
+        let stream;
+
+        document.getElementById('start').addEventListener('click', async () => {
+            try {
+                stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = (event) => {
+                    socket.emit('stream', event.data);
+                };
+
+                mediaRecorder.start(1000); // Collect 1 second of data
+                document.getElementById('start').disabled = true;
+                document.getElementById('stop').disabled = false;
+            } catch (err) {
+                console.error('Error starting screen share:', err);
+            }
+        });
+
+        document.getElementById('stop').addEventListener('click', () => {
+            mediaRecorder.stop();
+            stream.getTracks().forEach(track => track.stop());
+            document.getElementById('start').disabled = false;
+            document.getElementById('stop').disabled = true;
+        });
+    </script>
+</body>
+</html>
